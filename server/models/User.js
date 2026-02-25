@@ -1,49 +1,50 @@
-const {datatypes} = require('sequelize');
-const {sequelize} = require('.../config/database');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database'); 
 const bcrypt = require('bcrypt');
 
-const User = sequelize.define('User',{
-  id:{
-    type: DataType.Integer,
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
     primaryKey: true,
-    auoincrement: true
+    autoIncrement: true
   },
-  username:{
-    type: DataType.Varchar(255),
+  username: {
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true
   },
-  password:{
-    type: DataType.varchar(255),
+  password: {
+    type: DataTypes.STRING(255),
     allowNull: false
   },
-  email:{
-    type: DataType.Varchar(255),
+  email: {
+    type: DataTypes.STRING(255),
     allowNull: false,
     unique: true,
     validate: {
       isEmail: true,
-      notnull: true
+      notNull: true
     }
   },
-  role:{
+  role: {
     type: DataTypes.STRING,
-    defaultValue:'user'
+    defaultValue: 'user'
   }
-},{
+}, {
   tableName: 'users',
   timestamps: true,
   hooks: {
     beforeCreate: async (user) => {
-      if(user.password){
-        const salt= await bcrypt.genSalt(10);
+      if (user.password) {
+        const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }
     }
-}
+  }
 });
 
 User.prototype.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+module.exports = User;

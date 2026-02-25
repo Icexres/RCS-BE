@@ -6,7 +6,7 @@ const Favourite = require('./Favourite');
 const Tag = require('./Tag');
 const Taglist = require('./Taglist');
 
-// Define associations
+//associations defined here in index.js
 User.hasMany(Rating, { foreignKey: 'user_id' });
 Rating.belongsTo(User, { foreignKey: 'user_id' });
 

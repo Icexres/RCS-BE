@@ -9,7 +9,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    logging: false,
     pool: {
       max: 5,
       min: 0,
@@ -20,9 +20,16 @@ const sequelize = new Sequelize(
 );
 
 const testConnection = async () => {
-  try {
+ try {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
+    
+    // Import models to register them with Sequelize
+    require('../models/index');
+    
+    // Sync database
+    await sequelize.sync({ alter: true });
+    console.log('Database synchronized');
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
