@@ -21,9 +21,10 @@ class AuthController {
         data: user
       });
     } catch (error) {
+      console.error('Registration error:', error);
       res.status(400).json({
         success: false,
-        message: error.message
+        message: error.message || 'Validation error'
       });
     }
   }
@@ -48,6 +49,7 @@ class AuthController {
         data: user
       });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(401).json({
         success: false,
         message: error.message
