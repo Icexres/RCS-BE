@@ -1,12 +1,14 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 const restaurantRoutes = require('./restaurantRoutes');
+const tagRoute = require('./tagRoute');
 
 const router = express.Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
 router.use('/restaurant', restaurantRoutes);
+router.use('/tag', tagRoute);
 // Health check route
 router.get('/health', (req, res) => {
   res.status(200).json({ 
