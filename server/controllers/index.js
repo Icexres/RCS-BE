@@ -6,4 +6,4 @@ module.exports = {
   authController,
   restaurantController,
   tagController
-};
+};  
