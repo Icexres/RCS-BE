@@ -47,7 +47,9 @@ class FavouriteService {
     const user = await User.findByPk(userId, {
       include: [{
         model: Restaurant,
-        through: { attributes: ['created_at'] }
+        through: {
+          model: Favourite, 
+          attributes: ['created_at'] }
       }]
     });
 
