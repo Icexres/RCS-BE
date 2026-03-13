@@ -19,6 +19,11 @@ const Taglist = sequelize.define('Taglist', {
       model: 'tags',
       key: 'id'
     }
+  },
+  weight: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 1.0  // default weight
   }
 }, {
   tableName: 'taglist',

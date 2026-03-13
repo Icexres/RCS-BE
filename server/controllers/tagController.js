@@ -85,8 +85,17 @@ class TagController {
 
   async assignTagToRestaurant(req, res) {
     try {
-      const { restaurantId, tagId } = req.body;
-      const taglist = await tagService.assignTagToRestaurant(restaurantId, tagId);
+      const { restaurantId, tagId, weight } = req.body;
+      
+      // Validate required fields
+      if (!restaurantId || !tagId) {
+        return res.status(400).json({
+          success: false,
+          message: 'restaurantId and tagId are required'
+        });
+      }
+
+      const taglist = await tagService.assignTagToRestaurant(restaurantId, tagId, weight);
       
       res.status(201).json({
         success: true,
@@ -100,6 +109,51 @@ class TagController {
       });
     }
   }
+
+  async updateTagWeight(req, res) {
+    try {
+      const { restaurantId, tagId, weight } = req.body;
+      
+      // Validate required fields
+      if (!restaurantId || !tagId || weight === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'restaurantId, tagId, and weight are required'
+        });
+      }
+
+      const taglist = await tagService.updateTagWeight(restaurantId, tagId, weight);
+      
+      res.status(200).json({
+        success: true,
+        message: 'Tag weight updated successfully',
+        data: taglist
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
+  async getTagWeightForRestaurant(req, res) {
+    try {
+        const { restaurantId, tagId } = req.params;
+        
+        const result = await tagService.getTagWeightForRestaurant(restaurantId, tagId);
+        
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        res.status(404).json({
+            success: false,
+            message: error.message
+        });
+    }
+}
 
   // Remove tag from restaurant
   async removeTagFromRestaurant(req, res) {

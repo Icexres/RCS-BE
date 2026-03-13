@@ -26,6 +26,7 @@ class tagService{
         }
         return tag;
     }
+
     async updateTag(tagId, updateData){
         const tag = await Tag.findByPk(tagId);
         if (!tag){
@@ -34,6 +35,7 @@ class tagService{
         await tag.update(updateData);
         return tag;
     }
+
     async deleteTag(tagID){
         const tag=await Tag.findByPk(tagID);
         if (!tag){
@@ -46,7 +48,8 @@ class tagService{
         await tag.destroy();
         return { message: 'Tag deleted successfully' };
     }
-    async assignTagToRestaurant(restaurantId,tagId){
+
+    async assignTagToRestaurant(restaurantId, tagId, weight = 1.0){
         const restaurant = await Restaurant.findByPk(restaurantId);
         if (!restaurant){
             throw new Error('Restaurant not found');
@@ -55,18 +58,76 @@ class tagService{
         if (!tag){
             throw new Error('Tag not found');
         }
+
+        // Validate weight
+        const parsedWeight = Number(weight);
+        if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+            throw new Error('Weight must be a non-negative number');
+        }
+
         const existingAssignment = await Taglist.findOne({
             where: { restaurant_id: restaurantId, tag_id: tagId }
         });
         if (existingAssignment){
-            throw new Error('Tag is already assigned to this restaurant');
+            // Update weight instead of throwing error
+            await existingAssignment.update({ weight: parsedWeight });
+            return existingAssignment;
         }
+        
         const taglist = await Taglist.create({
             restaurant_id: restaurantId,
-            tag_id: tagId
+            tag_id: tagId,
+            weight: parsedWeight
         });
         return taglist;
     }
+
+    async updateTagWeight(restaurantId, tagId, weight){
+        // Validate weight
+        const parsedWeight = Number(weight);
+        if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+            throw new Error('Weight must be a non-negative number');
+        }
+
+        const taglist = await Taglist.findOne({
+            where: { restaurant_id: restaurantId, tag_id: tagId }
+        });
+        if (!taglist){
+            throw new Error('Tag is not assigned to this restaurant');
+        }
+
+        await taglist.update({ weight: parsedWeight });
+        return taglist;
+    }
+
+    async getTagWeightForRestaurant(restaurantId, tagId){
+    const taglist = await Taglist.findOne({
+        where: { restaurant_id: restaurantId, tag_id: tagId },
+        include: [
+            {
+                model: Tag,
+                attributes: ['id', 'name']
+            },
+            {
+                model: Restaurant,
+                attributes: ['id', 'r_name']
+            }
+        ]
+    });
+
+    if (!taglist){
+        throw new Error('Tag is not assigned to this restaurant');
+    }
+
+    return {
+        restaurantId: taglist.restaurant_id,
+        restaurant: taglist.Restaurant?.r_name,
+        tagId: taglist.tag_id,
+        tagName: taglist.Tag?.name,
+        weight: taglist.weight
+    };
+}
+
     async removeTagFromRestaurant(restaurantId, tagId){
         const taglist = await Taglist.findOne({
             where:{restaurant_id: restaurantId, tag_id: tagId}
@@ -77,11 +138,12 @@ class tagService{
         await taglist.destroy();
         return { message: 'Tag removed from restaurant'};
     }
+
     async getRestaurantTags(restaurantId){
         const restaurant = await Restaurant.findByPk(restaurantId,{
             include:[{
                 model: Tag,
-                through: { attributes: [] }
+                through: { attributes: ['weight'] }  // Include weight in response
             }]
         });
 
@@ -95,7 +157,7 @@ class tagService{
         const tag = await Tag.findByPk(tagId,{
             include:[{
                 model: Restaurant,
-                through: { attributes: [] }
+                through: { attributes: ['weight'] }  // Include weight in response
             }]
         });
         if (!tag){
