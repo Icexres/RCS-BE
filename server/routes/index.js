@@ -4,11 +4,13 @@ const restaurantRoutes = require('./restaurantRoutes');
 const tagRoute = require('./tagRoute');
 const likeRoutes = require('./likeRoutes');
 const favouriteRoutes = require('./favouriteRoutes');
+const recommendationRoutes = require('./recommendationRoutes');
 
 const router = express.Router();
 
 // Mount routes
 router.use('/auth', authRoutes);
+router.use('/recommendations', recommendationRoutes);
 router.use('/restaurant', restaurantRoutes);
 router.use('/tag', tagRoute);
 router.use('/like', likeRoutes);
