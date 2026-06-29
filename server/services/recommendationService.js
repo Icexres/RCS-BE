@@ -1,7 +1,7 @@
 const { User, Restaurant, Tag, Like, Taglist } = require('../models');
 
 class RecommendationService {
-  // ============ HELPER: Cosine Similarity ============
+  // Helper function for Cosine Similarity
   cosineSimilarity(vector1, vector2) {
     let dotProduct = 0;
     let norm1 = 0;
@@ -25,7 +25,7 @@ class RecommendationService {
     return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2));
   }
 
-  // ============ BUILD TAG VECTOR (Restaurant Feature Vector) ============
+  // BUILD TAG VECTOR (Restaurant Feature Vector) 
   async getRestaurantTagVector(restaurantId) {
     const tags = await Taglist.findAll({
       where: { restaurant_id: restaurantId }
@@ -39,7 +39,7 @@ class RecommendationService {
     return vector;
   }
 
-  // ============ BUILD USER LIKE VECTOR (User Behavior Vector) ============
+  // BUILD USER LIKE VECTOR (User Behavior Vector) 
   async getUserLikeVector(userId) {
     const likes = await Like.findAll({
       where: { user_id: userId }
@@ -53,7 +53,7 @@ class RecommendationService {
     return vector;
   }
 
-  // ============ RANDOM RESTAURANTS (Fallback for new users) ============
+  // RANDOM RESTAURANTS (Fallback for new users) 
   async getRandomRestaurants(k = 5) {
     const allRestaurants = await Restaurant.findAll();
     
@@ -72,21 +72,21 @@ class RecommendationService {
     }));
   }
 
-  // ============ CONTENT-BASED: Similar Restaurants ============
+  // CONTENT-BASED: Similar Restaurants
   async getContentBasedRecommendations(userId, k = 5) {
     // Step 1: Get restaurants the user has liked
     const userLikes = await Like.findAll({
       where: { user_id: userId }
     });
 
-    // NEW: Fallback for new users with no interaction history
+    //Fallback for new users with no interaction history
     if (userLikes.length === 0) {
       return await this.getRandomRestaurants(k);
     }
 
     const likedRestaurantIds = userLikes.map(l => l.restaurant_id);
 
-    // Step 2: Get tag vectors for each liked restaurant
+    //2: Get tag vectors for each liked restaurant
     const likedVectors = await Promise.all(
       likedRestaurantIds.map(id => this.getRestaurantTagVector(id))
     );
@@ -101,17 +101,16 @@ class RecommendationService {
       return [];
     }
 
-    // Step 4: Calculate similarity for each candidate
+    //4: Calculate similarity for each candidate
     const scoredRestaurants = await Promise.all(
       candidates.map(async (restaurant) => {
-        const vector = await this.getRestaurantTagVector(restaurant.id);
+        const vector = await this.getRestaurantTagVector(restaurant.id); //get candidate vector
 
         // Average similarity to all liked restaurants
-        const similarities = likedVectors.map(v => 
+        const similarities = likedVectors.map(v => //map loops through each item in liked vectors using v 
           this.cosineSimilarity(v, vector)
         );
-        const avgScore = similarities.reduce((a, b) => a + b, 0) / 
-                         similarities.length;
+        const avgScore = similarities.reduce((a, b) => a + b, 0) / similarities.length;
 
         return {
           ...restaurant.dataValues,
@@ -120,23 +119,23 @@ class RecommendationService {
       })
     );
 
-    // Step 5: Sort and return top K
+    //5: Sort and return top K
     return scoredRestaurants
       .sort((a, b) => b.similarity_score - a.similarity_score)
       .slice(0, k);
   }
 
-  // ============ COLLABORATIVE: Similar Users ============
+  // COLLABORATIVE: Similar Users
   async getCollaborativeRecommendations(userId, k = 5) {
-    // Step 1: Get current user's like vector
+    // 1: Get current user's like vector
     const userVector = await this.getUserLikeVector(userId);
 
-    // NEW: Fallback for new users with no interaction history
+    // Fallback for new users with no interaction history
     if (Object.keys(userVector).length === 0) {
       return await this.getRandomRestaurants(k);
     }
 
-    // Step 2: Get all other users
+    // 2: Get all other users
     const allUsers = await User.findAll();
     const otherUsers = allUsers.filter(u => u.id !== userId);
 
@@ -144,7 +143,7 @@ class RecommendationService {
       return [];
     }
 
-    // Step 3: Calculate similarity to each user
+    //3: Calculate similarity to each user
     const userSimilarities = await Promise.all(
       otherUsers.map(async (otherUser) => {
         const otherVector = await this.getUserLikeVector(otherUser.id);
@@ -157,19 +156,19 @@ class RecommendationService {
       })
     );
 
-    // Step 4: Get K nearest neighbors
+    // 4: Get K nearest neighbors
     const nearestNeighbors = userSimilarities
       .filter(u => u.similarity > 0) // Only similar users
       .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, k);
+      .slice(0, k); // gets k element
 
     if (nearestNeighbors.length === 0) {
       return [];
     }
 
-    // Step 5: Get restaurants liked by neighbors
+    // 5: Get restaurants liked by neighbors
     const userLikedIds = Object.keys(userVector)
-      .map(key => parseInt(key.replace('restaurant_', '')));
+      .map(key => parseInt(key.replace('restaurant_', '')));// restaurant_1 to 1 replace
 
     const recommendationScores = {};
 
@@ -186,7 +185,7 @@ class RecommendationService {
       });
     }
 
-    // Step 6: Get restaurant details and score them
+    // 6: Get restaurant details and score them
     const recommendedIds = Object.keys(recommendationScores)
       .map(id => parseInt(id));
 
@@ -202,62 +201,6 @@ class RecommendationService {
     return result
       .sort((a, b) => b.similarity_score - a.similarity_score)
       .slice(0, k);
-  }
-
-  // ============ HYBRID: Combine Both ============
-  async getHybridRecommendations(userId, k = 5) {
-    // Get user's interaction history
-    const userLikes = await Like.findAll({
-      where: { user_id: userId }
-    });
-
-    // NEW: Fallback for new users with no interaction history
-    if (userLikes.length === 0) {
-      return await this.getRandomRestaurants(k);
-    }
-
-    let contentRecs = [];
-    let collaborativeRecs = [];
-
-    try {
-      contentRecs = await this.getContentBasedRecommendations(userId, k);
-    } catch (error) {
-      console.log('Content-based failed:', error.message);
-    }
-
-    try {
-      collaborativeRecs = await this.getCollaborativeRecommendations(userId, k);
-    } catch (error) {
-      console.log('Collaborative failed:', error.message);
-    }
-
-    if (contentRecs.length === 0 && collaborativeRecs.length === 0) {
-      throw new Error('No recommendations available');
-    }
-
-    // Merge and deduplicate
-    const merged = new Map();
-
-    contentRecs.forEach((rec, idx) => {
-      const score = (1 - idx / (k + 1)) * 0.5; // 50% weight
-      merged.set(rec.id, (merged.get(rec.id) || 0) + score);
-    });
-
-    collaborativeRecs.forEach((rec, idx) => {
-      const score = (1 - idx / (k + 1)) * 0.5; // 50% weight
-      merged.set(rec.id, (merged.get(rec.id) || 0) + score);
-    });
-
-    const result = Array.from(merged.entries())
-      .map(([id, score]) => {
-        const restaurant = contentRecs.find(r => r.id === id) ||
-                           collaborativeRecs.find(r => r.id === id);
-        return { ...restaurant, hybrid_score: score };
-      })
-      .sort((a, b) => b.hybrid_score - a.hybrid_score)
-      .slice(0, k);
-
-    return result;
   }
 }
 
