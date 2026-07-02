@@ -31,7 +31,7 @@ class AuthService {
     });
 
     return {
-      id: user.id,
+      id: user.user_id,
       username: user.username,
       email: user.email,
       role: user.role
@@ -54,7 +54,7 @@ class AuthService {
     }
 
     return {
-      id: user.id,
+      id: user.user_id,
       username: user.username,
       email: user.email,
       role: user.role
@@ -69,7 +69,7 @@ class AuthService {
     }
     
     return {
-      id: user.id,
+      id: user.user_id,
       username: user.username,
       email: user.email,
       role: user.role

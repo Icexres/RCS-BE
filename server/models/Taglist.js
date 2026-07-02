@@ -7,8 +7,8 @@ const Taglist = sequelize.define('Taglist', {
     allowNull: false,
     primaryKey: true,
     references: {
-      model: 'restaurant',
-      key: 'id'
+      model: 'restaurants',
+      key: 'restaurant_id'
     }
   },
   tag_id: {
@@ -17,7 +17,7 @@ const Taglist = sequelize.define('Taglist', {
     primaryKey: true,
     references: {
       model: 'tags',
-      key: 'id'
+      key: 'tag_id'
     }
   },
   weight: {

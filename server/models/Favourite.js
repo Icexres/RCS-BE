@@ -8,7 +8,7 @@ const Favourite = sequelize.define('Favourite', {
     primaryKey: true,
     references: {
       model: 'users',
-      key: 'id'
+      key: 'user_id'
     }
   },
   restaurant_id: {
@@ -16,8 +16,8 @@ const Favourite = sequelize.define('Favourite', {
     allowNull: false,
     primaryKey: true,
     references: {
-      model: 'restaurant',
-      key: 'id'
+      model: 'restaurants',
+      key: 'restaurant_id'
     }
   }
 }, {

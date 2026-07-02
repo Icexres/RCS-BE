@@ -106,11 +106,11 @@ class tagService{
         include: [
             {
                 model: Tag,
-                attributes: ['id', 'name']
+                attributes: ['tag_id', 'name']
             },
             {
                 model: Restaurant,
-                attributes: ['id', 'r_name']
+                attributes: ['restaurant_id', 'r_name']
             }
         ]
     });

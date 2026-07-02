@@ -65,7 +65,7 @@ const getUserBookings = async (userId, role) => {
 
   return await Booking.findAll({
     where: { user_id: userId },
-    include: ['Restaurant'],
+    include: [{model: Restaurant}],
     order: [['booking_date', 'DESC']]
   });
 };

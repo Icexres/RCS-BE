@@ -94,7 +94,7 @@ class RecommendationService {
     // Step 3: Get all restaurants not liked by user
     const allRestaurants = await Restaurant.findAll();
     const candidates = allRestaurants.filter(
-      r => !likedRestaurantIds.includes(r.id)
+      r => !likedRestaurantIds.includes(r.restaurant_id)
     );
 
     if (candidates.length === 0) {
@@ -104,7 +104,7 @@ class RecommendationService {
     //4: Calculate similarity for each candidate
     const scoredRestaurants = await Promise.all(
       candidates.map(async (restaurant) => {
-        const vector = await this.getRestaurantTagVector(restaurant.id); //get candidate vector
+        const vector = await this.getRestaurantTagVector(restaurant.restaurant_id); //get candidate vector
 
         // Average similarity to all liked restaurants
         const similarities = likedVectors.map(v => //map loops through each item in liked vectors using v 
@@ -137,7 +137,7 @@ class RecommendationService {
 
     // 2: Get all other users
     const allUsers = await User.findAll();
-    const otherUsers = allUsers.filter(u => u.id !== userId);
+    const otherUsers = allUsers.filter(u => u.user_id !== userId);
 
     if (otherUsers.length === 0) {
       return [];
@@ -146,11 +146,11 @@ class RecommendationService {
     //3: Calculate similarity to each user
     const userSimilarities = await Promise.all(
       otherUsers.map(async (otherUser) => {
-        const otherVector = await this.getUserLikeVector(otherUser.id);
+        const otherVector = await this.getUserLikeVector(otherUser.user_id);
         const similarity = this.cosineSimilarity(userVector, otherVector);
 
         return {
-          user_id: otherUser.id,
+          user_id: otherUser.user_id,
           similarity
         };
       })
@@ -170,7 +170,7 @@ class RecommendationService {
     const userLikedIds = Object.keys(userVector)
       .map(key => parseInt(key.replace('restaurant_', '')));// restaurant_1 to 1 replace
 
-    const recommendationScores = {};
+    const   recommendationScores = {};
 
     for (const neighbor of nearestNeighbors) {
       const neighborLikes = await Like.findAll({
@@ -190,12 +190,12 @@ class RecommendationService {
       .map(id => parseInt(id));
 
     const restaurants = await Restaurant.findAll({
-      where: { id: recommendedIds }
+      where: { restaurant_id: recommendedIds }
     });
 
     const result = restaurants.map(r => ({
       ...r.dataValues,
-      similarity_score: recommendationScores[r.id]
+      similarity_score: recommendationScores[r.restaurant_id]
     }));
 
     return result
