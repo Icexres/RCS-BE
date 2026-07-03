@@ -5,6 +5,7 @@ const Favourite = require('./Favourite');
 const Tag = require('./Tag');
 const Taglist = require('./Taglist');
 const Booking = require('./Booking');
+const Coldstart = require('./Coldstart');
 
 //associations defined here in index.js
 
@@ -23,6 +24,9 @@ Booking.belongsTo(User,{foreignKey:'user_id'});
 Restaurant.hasMany(Booking,{foreignKey:'restaurant_id'});
 Booking.belongsTo(Restaurant,{foreignKey:'restaurant_id'});
 
+User.belongsToMany(Tag, { through: Coldstart, foreignKey: 'user_id' });
+Tag.belongsToMany(User, { through: Coldstart, foreignKey: 'tag_id' });
+
 module.exports = {
   User,
   Restaurant,
@@ -30,5 +34,6 @@ module.exports = {
   Favourite,
   Tag,
   Taglist,
-  Booking
+  Booking,
+  Coldstart
 };

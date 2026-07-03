@@ -6,6 +6,7 @@ const likeRoutes = require('./likeRoutes');
 const favouriteRoutes = require('./favouriteRoutes');
 const recommendationRoutes = require('./recommendationRoutes');
 const bookingRoutes = require('./bookingRoutes');
+const coldstartRoutes = require('./coldstartRoutes');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.use('/tag', tagRoute);
 router.use('/like', likeRoutes);
 router.use('/favourite', favouriteRoutes);
 router.use('/bookings', bookingRoutes);
-
+router.use('/coldstart', coldstartRoutes);
 // Health check route
 router.get('/health', (req, res) => {
   res.status(200).json({ 

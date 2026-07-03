@@ -1,4 +1,4 @@
-const { User, Restaurant, Tag, Like, Taglist } = require('../models');
+const { User, Restaurant, Tag, Like, Taglist, Coldstart } = require('../models');
 
 class RecommendationService {
   // Helper function for Cosine Similarity
@@ -81,6 +81,46 @@ class RecommendationService {
 
     //Fallback for new users with no interaction history
     if (userLikes.length === 0) {
+      // Step 2: Check cold start tags first
+      const coldstartTags = await Coldstart.findAll({
+        where: { user_id: userId }
+      });
+
+      // If user has chosen tags, use them for recommendations
+      if (coldstartTags.length > 0) {
+        const tagIds = coldstartTags.map(item => item.tag_id);
+
+        // Step 3: Get restaurants connected to selected tags
+        const matchedTagRestaurants = await Taglist.findAll({
+          where: { tag_id: tagIds }
+        });
+
+        const scoreMap = {};
+
+        matchedTagRestaurants.forEach(item => {
+          scoreMap[item.restaurant_id] =
+            (scoreMap[item.restaurant_id] || 0) + item.weight;
+        });
+
+        const restaurantIds = Object.keys(scoreMap).map(id => parseInt(id, 10));
+
+        // Step 4: Get restaurant details and sort by score
+        if (restaurantIds.length > 0) {
+          const restaurants = await Restaurant.findAll({
+            where: { restaurant_id: restaurantIds }
+          });
+
+          return restaurants
+            .map(restaurant => ({
+              ...restaurant.dataValues,
+              similarity_score: scoreMap[restaurant.restaurant_id] || 0
+            }))
+            .sort((a, b) => b.similarity_score - a.similarity_score)
+            .slice(0, k);
+        }
+      }
+
+      // Fallback for users with no cold start data
       return await this.getRandomRestaurants(k);
     }
 
@@ -107,7 +147,7 @@ class RecommendationService {
         const vector = await this.getRestaurantTagVector(restaurant.restaurant_id); //get candidate vector
 
         // Average similarity to all liked restaurants
-        const similarities = likedVectors.map(v => //map loops through each item in liked vectors using v 
+        const similarities = likedVectors.map(v => //map loops through each item in liked vectors using v
           this.cosineSimilarity(v, vector)
         );
         const avgScore = similarities.reduce((a, b) => a + b, 0) / similarities.length;
