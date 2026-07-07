@@ -48,30 +48,6 @@ class RecommendationController {
       });
     }
   }
-
-  // Hybrid recommendations
-  async getHybridRecommendations(req, res) {
-    try {
-      const { userId } = req.params;
-      const { k } = req.query;
-      const limit = k ? parseInt(k) : 5;
-
-      const recommendations = await recommendationService
-        .getHybridRecommendations(userId, limit);
-
-      res.status(200).json({
-        success: true,
-        method: 'Hybrid (Content + Collaborative)',
-        count: recommendations.length,
-        data: recommendations
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-  }
 }
 
 module.exports = new RecommendationController();

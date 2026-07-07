@@ -14,11 +14,4 @@ router.get('/user/:userId/collaborative',
   recommendationController.getCollaborativeRecommendations
     .bind(recommendationController)
 );
-
-// GET /recommendations/user/:userId/hybrid?k=5
-router.get('/user/:userId/hybrid', 
-  recommendationController.getHybridRecommendations
-    .bind(recommendationController)
-);
-
 module.exports = router;
